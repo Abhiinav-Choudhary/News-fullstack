@@ -42,23 +42,25 @@ export const googleAuth = async (req, res) => {
     // CREATE USER IF NOT EXISTS
     if (existingUser.rows.length === 0) {
 
-      const newUser = await pool.query(
-        `
-        INSERT INTO users
-        (
-          username,
-          email
-        )
+     const newUser = await pool.query(
+  `
+  INSERT INTO users
+  (
+    username,
+    email,
+    password
+  )
 
-        VALUES ($1, $2)
+  VALUES ($1, $2, $3)
 
-        RETURNING *
-        `,
-        [
-          name,
-          email 
-        ]
-      );
+  RETURNING *
+  `,
+  [
+    name,
+    email,
+    "google-auth-user"
+  ]
+);
 
       user = newUser.rows[0];
 
