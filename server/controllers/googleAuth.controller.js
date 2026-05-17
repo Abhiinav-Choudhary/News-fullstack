@@ -25,8 +25,7 @@ export const googleAuth = async (req, res) => {
 
     const {
       email,
-      name,
-      picture
+      name
     } = decoded;
 
     // CHECK USER EXISTS
@@ -48,18 +47,16 @@ export const googleAuth = async (req, res) => {
         INSERT INTO users
         (
           username,
-          email,
-          profile_pic
+          email
         )
 
-        VALUES ($1, $2, $3)
+        VALUES ($1, $2)
 
         RETURNING *
         `,
         [
           name,
-          email,
-          picture
+          email 
         ]
       );
 
