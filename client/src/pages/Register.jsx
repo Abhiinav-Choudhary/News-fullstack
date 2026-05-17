@@ -4,19 +4,28 @@ import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 
+import API from "../api/axios";
+
+import {
+  signInWithPopup
+} from "firebase/auth";
+
+import {
+  auth,
+  provider
+} from "../firebase";
+
 function Register() {
 
   const navigate = useNavigate();
 
-  const { register } = useAuth();
+  const { register, setUser } = useAuth();
 
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     password: ""
   });
-
-
 
   // HANDLE INPUT CHANGE
   const handleChange = (e) => {
@@ -27,9 +36,7 @@ function Register() {
     });
   };
 
-
-
-  // HANDLE SUBMIT
+  // NORMAL REGISTER
   const handleSubmit = async (e) => {
 
     e.preventDefault();
@@ -51,7 +58,40 @@ function Register() {
     }
   };
 
+  // GOOGLE REGISTER / LOGIN
+  const handleGoogleAuth = async () => {
 
+    try {
+
+      // FIREBASE POPUP
+      const result =
+        await signInWithPopup(
+          auth,
+          provider
+        );
+
+      // FIREBASE TOKEN
+      const token =
+        await result.user.getIdToken();
+
+      // SEND TOKEN TO BACKEND
+      const res = await API.post(
+        "/auth/google",
+        { token }
+      );
+
+      // SET USER
+      setUser(res.data.user);
+
+      navigate("/");
+
+    } catch (error) {
+
+      console.log(error);
+
+      alert("Google Authentication Failed");
+    }
+  };
 
   return (
 
@@ -91,10 +131,7 @@ function Register() {
           Register
         </h1>
 
-
-
         {/* USERNAME */}
-
         <input
           type="text"
           name="username"
@@ -112,10 +149,7 @@ function Register() {
           "
         />
 
-
-
         {/* EMAIL */}
-
         <input
           type="email"
           name="email"
@@ -133,10 +167,7 @@ function Register() {
           "
         />
 
-
-
         {/* PASSWORD */}
-
         <input
           type="password"
           name="password"
@@ -154,10 +185,7 @@ function Register() {
           "
         />
 
-
-
-        {/* BUTTON */}
-
+        {/* REGISTER BUTTON */}
         <button
           className="
             w-full
@@ -165,12 +193,56 @@ function Register() {
             bg-black text-white
             dark:bg-white dark:text-black
 
-            p-3 rounded-lg
+            p-3 rounded-lg mb-4
 
             transition-all duration-300
           "
         >
           Register
+        </button>
+
+        {/* DIVIDER */}
+        <div className="flex items-center mb-4">
+
+          <div className="flex-1 h-[1px] bg-gray-300"></div>
+
+          <span className="mx-3 text-gray-500">
+            OR
+          </span>
+
+          <div className="flex-1 h-[1px] bg-gray-300"></div>
+
+        </div>
+
+        {/* GOOGLE AUTH */}
+        <button
+          type="button"
+          onClick={handleGoogleAuth}
+          className="
+            w-full
+
+            border border-gray-300
+
+            bg-white text-black
+
+            p-3 rounded-lg
+
+            flex items-center justify-center gap-3
+
+            hover:bg-gray-100
+
+            transition-all duration-300
+          "
+        >
+
+          <img
+            src="https://www.svgrepo.com/show/475656/google-color.svg"
+            alt="google"
+            className="w-5 h-5"
+          />
+
+          Continue with Google
+
         </button>
 
       </form>
