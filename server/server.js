@@ -14,7 +14,7 @@ const app = express();
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://news-fullstack-one.vercel.app"
+  "https://news-fullstack-eight.vercel.app"
 ];
 
 app.use(cors({
