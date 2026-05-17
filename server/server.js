@@ -12,13 +12,27 @@ dotenv.config();
 
 const app = express();
 
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://news-fullstack-eight.vercel.app"
-];
+
+app.set("trust proxy", 1);
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: function(origin, callback) {
+
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (
+      origin === "http://localhost:5173" ||
+      origin.includes("vercel.app")
+    ) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS blocked"));
+    }
+
+  },
+
   credentials: true
 }));
 
