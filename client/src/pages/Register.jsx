@@ -1,253 +1,266 @@
-import { useState } from "react";
 
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  UserRound,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  LoaderCircle,
+} from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
-
 import API from "../api/axios";
+import AuthLayout from "../components/AuthLayout";
 
-import {
-  signInWithPopup
-} from "firebase/auth";
-
-import {
-  auth,
-  provider
-} from "../firebase";
+import { signInWithPopup } from "firebase/auth";
+import { auth, provider } from "../firebase";
 
 function Register() {
-
   const navigate = useNavigate();
-
   const { register, setUser } = useAuth();
 
   const [formData, setFormData] = useState({
     username: "",
     email: "",
-    password: ""
+    password: "",
   });
 
-  // HANDLE INPUT CHANGE
-  const handleChange = (e) => {
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [submitting, setSubmitting] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const handleChange = (event) => {
+    setFormData((previous) => ({
+      ...previous,
+      [event.target.name]: event.target.value,
+    }));
+
+    setErrorMessage("");
   };
 
-  // NORMAL REGISTER
-  const handleSubmit = async (e) => {
-
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (submitting) return;
 
     try {
+      setSubmitting("email");
+      setErrorMessage("");
 
       await register(formData);
 
       navigate("/");
-
     } catch (error) {
+      console.error("Registration failed:", error);
 
-      console.log(error);
-
-      alert(
+      setErrorMessage(
         error.response?.data?.message ||
-        "Registration Failed"
+          "We couldn't create your account. Please try again."
       );
+    } finally {
+      setSubmitting("");
     }
   };
 
-  // GOOGLE REGISTER / LOGIN
   const handleGoogleAuth = async () => {
+    if (submitting) return;
 
     try {
+      setSubmitting("google");
+      setErrorMessage("");
 
-      // FIREBASE POPUP
-      const result =
-        await signInWithPopup(
-          auth,
-          provider
-        );
+      const result = await signInWithPopup(auth, provider);
+      const token = await result.user.getIdToken();
 
-      // FIREBASE TOKEN
-      const token =
-        await result.user.getIdToken();
+      const res = await API.post("/auth/google", { token });
 
-      // SEND TOKEN TO BACKEND
-      const res = await API.post(
-        "/auth/google",
-        { token }
-      );
-
-      // SET USER
       setUser(res.data.user);
-
       navigate("/");
-
     } catch (error) {
+      console.error("Google authentication failed:", error);
 
-      console.log(error);
-
-      alert("Google Authentication Failed");
+      setErrorMessage(
+        error.response?.data?.message ||
+          "Google authentication failed. Please try again."
+      );
+    } finally {
+      setSubmitting("");
     }
   };
 
   return (
-
-    <div
-      className="
-        min-h-screen
-        flex items-center justify-center
-
-        bg-gray-100
-        dark:bg-black
-
-        transition-all duration-300
-      "
-    >
-
-      <form
-        onSubmit={handleSubmit}
-        className="
-          bg-white dark:bg-zinc-900
-
-          p-8 rounded-2xl shadow-lg
-
-          w-[400px]
-
-          transition-all duration-300
-        "
-      >
-
-        <h1
-          className="
-            text-3xl font-bold mb-6 text-center
-
-            text-black
-            dark:text-white
-          "
-        >
-          Register
-        </h1>
-
+    <AuthLayout mode="register">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {/* USERNAME */}
-        <input
-          type="text"
-          name="username"
-          placeholder="Username"
-          value={formData.username}
-          onChange={handleChange}
-          className="
-            w-full border p-3 rounded-lg mb-4 outline-none
+        <div>
+          <label
+            htmlFor="username"
+            className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200"
+          >
+            Username
+          </label>
 
-            bg-white text-black
-            dark:bg-zinc-800 dark:text-white
+          <div className="relative">
+            <UserRound
+              size={18}
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+            />
 
-            placeholder:text-gray-500
-            dark:placeholder:text-gray-400
-          "
-        />
+            <input
+              id="username"
+              type="text"
+              name="username"
+              autoComplete="username"
+              placeholder="Choose a username"
+              value={formData.username}
+              onChange={handleChange}
+              required
+              className="min-h-12 w-full rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-blue-400"
+            />
+          </div>
+        </div>
 
         {/* EMAIL */}
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={formData.email}
-          onChange={handleChange}
-          className="
-            w-full border p-3 rounded-lg mb-4 outline-none
+        <div>
+          <label
+            htmlFor="email"
+            className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200"
+          >
+            Email address
+          </label>
 
-            bg-white text-black
-            dark:bg-zinc-800 dark:text-white
+          <div className="relative">
+            <Mail
+              size={18}
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+            />
 
-            placeholder:text-gray-500
-            dark:placeholder:text-gray-400
-          "
-        />
+            <input
+              id="email"
+              type="email"
+              name="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="min-h-12 w-full rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-blue-400"
+            />
+          </div>
+        </div>
 
         {/* PASSWORD */}
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-          className="
-            w-full border p-3 rounded-lg mb-5 outline-none
+        <div>
+          <label
+            htmlFor="password"
+            className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200"
+          >
+            Password
+          </label>
 
-            bg-white text-black
-            dark:bg-zinc-800 dark:text-white
+          <div className="relative">
+            <Lock
+              size={18}
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+            />
 
-            placeholder:text-gray-500
-            dark:placeholder:text-gray-400
-          "
-        />
+            <input
+              id="password"
+              type={passwordVisible ? "text" : "password"}
+              name="password"
+              autoComplete="new-password"
+              placeholder="Create a strong password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              minLength={8}
+              className="min-h-12 w-full rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-blue-400"
+            />
+
+            <button
+              type="button"
+              onClick={() => setPasswordVisible((value) => !value)}
+              aria-label={passwordVisible ? "Hide password" : "Show password"}
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-white"
+            >
+              {passwordVisible ? <EyeOff size={17} /> : <Eye size={17} />}
+            </button>
+          </div>
+
+          <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+            Use at least 8 characters, subject to your backend's password rules.
+          </p>
+        </div>
+
+        {/* ERROR */}
+        {errorMessage && (
+          <div
+            role="alert"
+            className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-5 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300"
+          >
+            {errorMessage}
+          </div>
+        )}
 
         {/* REGISTER BUTTON */}
         <button
-          className="
-            w-full
-
-            bg-black text-white
-            dark:bg-white dark:text-black
-
-            p-3 rounded-lg mb-4
-
-            transition-all duration-300
-          "
+          type="submit"
+          disabled={Boolean(submitting)}
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/15 transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/25 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Register
+          {submitting === "email" && (
+            <LoaderCircle size={18} className="animate-spin" />
+          )}
+
+          {submitting === "email" ? "Creating account..." : "Create your account"}
         </button>
 
         {/* DIVIDER */}
-        <div className="flex items-center mb-4">
+        <div className="flex items-center gap-4 py-1">
+          <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
 
-          <div className="flex-1 h-[1px] bg-gray-300"></div>
-
-          <span className="mx-3 text-gray-500">
-            OR
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            Or sign up with
           </span>
 
-          <div className="flex-1 h-[1px] bg-gray-300"></div>
-
+          <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
         </div>
 
-        {/* GOOGLE AUTH */}
+        {/* GOOGLE */}
         <button
           type="button"
           onClick={handleGoogleAuth}
-          className="
-            w-full
-
-            border border-gray-300
-
-            bg-white text-black
-
-            p-3 rounded-lg
-
-            flex items-center justify-center gap-3
-
-            hover:bg-gray-100
-
-            transition-all duration-300
-          "
+          disabled={Boolean(submitting)}
+          className="flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/10 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
         >
+          {submitting === "google" ? (
+            <LoaderCircle size={19} className="animate-spin" />
+          ) : (
+            <img
+              src="https://www.svgrepo.com/show/475656/google-color.svg"
+              alt=""
+              className="h-5 w-5"
+            />
+          )}
 
-          <img
-            src="https://www.svgrepo.com/show/475656/google-color.svg"
-            alt="google"
-            className="w-5 h-5"
-          />
-
-          Continue with Google
-
+          {submitting === "google"
+            ? "Connecting to Google..."
+            : "Continue with Google"}
         </button>
-
       </form>
 
-    </div>
+      {/* LOGIN LINK */}
+      <p className="mt-7 text-center text-sm text-slate-600 dark:text-slate-400">
+        Already have an account?{" "}
+        <Link
+          to="/login"
+          className="font-bold text-blue-600 hover:text-blue-700 hover:underline dark:text-blue-400"
+        >
+          Sign in
+        </Link>
+      </p>
+    </AuthLayout>
   );
 }
 

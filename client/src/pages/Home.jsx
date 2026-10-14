@@ -77,8 +77,8 @@ function Home() {
   {articles.map((article, index) => (
 
     <NewsCard
-      key={index}
-      article={article}
+      key={article.url || `${article.title}-${index}`}
+     article={article}
     />
 
   ))}
